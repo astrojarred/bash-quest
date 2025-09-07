@@ -19,6 +19,21 @@ same_file() {
 
 tmpfile() { mktemp "${TMPDIR:-/tmp}/uq.XXXXXXXX"; }
 
+# Pretty rainbow text helper
+rainbow() {
+    local text="$*"
+    local colors=(31 33 32 36 34 35)
+    local i=0
+    local out=""
+    local ch
+    while IFS= read -r -n1 ch; do
+    [[ -z "$ch" ]] && break
+    out+=$'\e['"${colors[i % ${#colors[@]}]}"$'m'$ch
+    i=$((i+1))
+    done <<<"$text"
+    printf "%b\e[0m" "$out"
+}
+
 # --- task checks -----------------------------------------------------------
 
 check_1() {
@@ -57,6 +72,7 @@ check_4() {
     ok 4 "All poems copied correctly"
 }
 
+
 check_5() {
     need_dir "data/versions" 5
     need_dir "my_stuff/output" 5
@@ -88,6 +104,10 @@ EOF
     same_file "$tmp" "my_stuff/about.md" || { rm -f "$tmp"; fail 6 "about.md content mismatch"; }
     rm -f "$tmp"
     ok 6 "about.md content is correct"
+}
+
+secret_word() {
+    printf '%b' '\x66\x6f\x78'
 }
 
 check_7() {
@@ -209,7 +229,13 @@ case "${1:-}" in
     9)  check_9 ;;
     10) check_10 ;;
     all)
+    # With set -e, any failing check will exit early. If we reach here, all passed.
     for i in {1..10}; do "check_$i"; done
+    printf "\n🎉🎉  "
+    printf "All checks passed, that's awesome!"
+    printf "  🎉🎉\n\n"
+    rainbow "The secret word is '$(secret_word)'"
+    printf "\n"
     ;;
   *) usage; exit 1 ;;
 esac
